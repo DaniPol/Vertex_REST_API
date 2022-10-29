@@ -6,8 +6,6 @@ import io.vertx.core.eventbus.MessageConsumer;
 import org.example.EventBusTopics;
 
 public class RestVerticle extends AbstractVerticle {
-    private MessageConsumer<String> m_startEvent;
-
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
         vertx.eventBus().publish(EventBusTopics.START_EVENT, "RestVerticle started!");
