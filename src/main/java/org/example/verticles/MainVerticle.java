@@ -1,4 +1,4 @@
-package org.example.vetricles;
+package org.example.verticles;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;

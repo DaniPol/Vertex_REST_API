@@ -2,16 +2,14 @@ package org.example;
 
 
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import org.example.vetricles.MainVerticle;
-import org.example.vetricles.OrderVerticle;
-import org.example.vetricles.RestVerticle;
+import org.example.verticles.MainVerticle;
+import org.example.verticles.OrderVerticle;
+import org.example.verticles.RestVerticle;
 
 public class Main {
-    public static void main(String[] args) {
-        String id;
-        String pw;
+    public static void main(String[] args) throws Exception {
+        String username = "dani", password = "12312";
 
         Vertx vertx = Vertx.vertx();
 
@@ -22,13 +20,5 @@ public class Main {
                         vertx.deployVerticle(OrderVerticle.class, new DeploymentOptions());
                 });
         });
-
-
-
-
-
-
-
     }
-
 }
