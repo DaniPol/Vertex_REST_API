@@ -30,8 +30,7 @@ public class RestVerticle extends AbstractVerticle {
 
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
-        vertx.eventBus().publish(EventBusTopics.START_EVENT, "RestVerticle started!");
-
+        //vertx.eventBus().publish(EventBusTopics.START_EVENT, "RestVerticle started!");
 
         Router router = Router.router(vertx);
 
@@ -49,7 +48,6 @@ public class RestVerticle extends AbstractVerticle {
                 HttpServer server =  vertx.createHttpServer();
                 usersPort.put(username,new Pair<>(curr_port_num, server) );
                 server.requestHandler(router).listen(curr_port_num);
-                System.out.println("hi");
             }
 
             else
@@ -58,6 +56,7 @@ public class RestVerticle extends AbstractVerticle {
 
         router.get("/Login/:username").handler(ctx-> {
             String username = ctx.pathParam("username");
+
             if(usersPort.containsKey(username))
                 ctx.request().response().end(String.format("hi %s ",username));
             else
@@ -66,12 +65,36 @@ public class RestVerticle extends AbstractVerticle {
 
         router.get("/Logout/:username").handler(ctx-> {
             String username = ctx.pathParam("username");
-            if(usersPort.containsKey(username))
-                usersPort.get(username).getValue().close();
+
+            if(!Logout(username))
+                ctx.request().response().end(String.format("you are not logged in"));
+        });
+
+        router.get("/AddOrder/:username/:order").handler(ctx->{
+            String username = ctx.pathParam("username");
+            String order = ctx.pathParam("order");
+
+            if(usersPort.containsKey(username)) {
+                vertx.eventBus().request(EventBusTopics.ADD_ORDER, username + ";" + order, ar->{
+                    if(ar.succeeded())
+                        ctx.request().response().end(String.format((String) ar.result().body()));
+                });
+            }
             else
                 ctx.request().response().end(String.format("you are not logged in"));
+        });
 
+        router.get("/GetOrders/:username").handler(ctx->{
+            String username = ctx.pathParam("username");
+            if(usersPort.containsKey(username)) {
+                vertx.eventBus().request(EventBusTopics.GET_ORDERS,username, ar-> {
+                    if (ar.succeeded())
+                        ctx.request().response().end(String.format((String) ar.result().body()));
                 });
+            }
+            else
+                ctx.request().response().end(String.format("you are not logged in"));
+        });
 
 
         vertx.createHttpServer().requestHandler(router).listen(start_port_num);
@@ -85,19 +108,26 @@ public class RestVerticle extends AbstractVerticle {
     }
 
     public Boolean Login(String username, String password) {
+        Object obj = null;
         try {
-            Object obj = this.parser.parse(new FileReader(this.usersDataPath));
-            JSONObject jsonObject = (JSONObject) obj;
-            String pw = (String) jsonObject.get(username);
-
-            return password.equals(pw);
-
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+            obj = this.parser.parse(new FileReader(this.usersDataPath));
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (ParseException e) {
             throw new RuntimeException(e);
         }
+        JSONObject jsonObject = (JSONObject) obj;
+        String pw = (String) jsonObject.get(username);
+
+            return password.equals(pw);
+    }
+
+    public Boolean Logout(String username){
+        if(usersPort.containsKey(username)) {
+            usersPort.get(username).getValue().close();
+            usersPort.remove(username);
+            return true;
+        }
+        return  false;
     }
 }
